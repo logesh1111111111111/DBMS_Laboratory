@@ -1,0 +1,191 @@
+create table SALESMAN
+(
+	Salesman_id varchar(10),
+	Name varchar(10),
+	City varchar(10),
+	Commission int,
+	primary key(Salesman_id)
+);
+
+create table CUSTOMER
+(
+	Customer_id varchar(10),
+	Cust_name varchar(10),
+	City varchar(10),
+	Grade int,
+	Salesman_id varchar(10),
+	Foreign key(Salesman_id)references SALESMAN(Salesman_id)on delete set NULL,
+	primary key(Customer_id)
+);
+
+create table ORDERS
+(
+	Order_no varchar(10),
+	Purchase_amt int,
+	Ord_date date,
+	Customer_id varchar(10),
+	Salesman_id varchar(10),
+	Foreign key (Salesman_id) references SALESMAN(Salesman_id) on delete cascade ,
+	Foreign key (Customer_id) references CUSTOMER(Customer_id) on delete cascade,
+	Primary key(Order_no)
+);
+--------------------------------------------------------------------------------------------------
+SQL> desc SALESMAN;
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ SALESMAN_ID                               NOT NULL VARCHAR2(10)
+ NAME                                               VARCHAR2(10)
+ CITY                                               VARCHAR2(10)
+ COMMISSION                                         NUMBER(38)
+
+SQL> DESC CUSTOMER;
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ CUSTOMER_ID                               NOT NULL VARCHAR2(10)
+ CUST_NAME                                          VARCHAR2(10)
+ CITY                                               VARCHAR2(10)
+ GRADE                                              NUMBER(38)
+ SALESMAN_ID                                        VARCHAR2(10)
+
+SQL> desc ORDERS;
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ ORDER_NO                                  NOT NULL VARCHAR2(10)
+ PURCHASE_AMT                                       NUMBER(38)
+ ORD_DATE                                           DATE
+ CUSTOMER_ID                                        VARCHAR2(10)
+ SALESMAN_ID                                        VARCHAR2(10)
+ -------------------------------------------------------------------------------------------------
+ 
+INSERT into SALESMAN values('12355','Ramesh','Bangalore',100);
+INSERT into SALESMAN values('12366','Suresh','Bangalore',100);
+INSERT into SALESMAN values('12377','Ganesh','Bangalore',100);
+INSERT into SALESMAN values('12388','Rajesh','Mysore',150);
+INSERT into SALESMAN values('12399','Logesh','Mysore',150);
+
+insert into CUSTOMER values('98711','Aashritha','Bangalore',100,'12355');
+insert into CUSTOMER values('98712','Anvitha','Bangalore',90,'12355');
+insert into CUSTOMER values('98713','Thanvitha','Bangalore',100,'12366');
+insert into CUSTOMER values('98714','Shanvitha','Mysore',110,'12388');
+insert into CUSTOMER values('98715','Samyuktha','Mysore',80,'12388');
+
+insert into ORDERS values('10001',1000,'20-NOV-2021','98711','12355');
+insert into ORDERS values('10002',1200,'25-NOV-2021','98712','12355');
+insert into ORDERS values('10003',2000,'26-NOV-2021','98711','12366');
+insert into ORDERS values('10004',1000,'30-NOV-2021','98714','12388');
+insert into ORDERS values('10005',1000,'30-NOV-2021','98715','12388');
+
+--------------------------------------------------------------------------------------------------
+
+SQL> select * from salesman;
+
+SALESMAN_I NAME       CITY       COMMISSION
+---------- ---------- ---------- ----------
+12355      Ramesh     Bangalore         100
+12366      Suresh     Bangalore         100
+12377      Ganesh     Bangalore         100
+12388      Rajesh     Mysore            150
+12399      Logesh     Mysore            150
+
+SQL> select * from customer;
+
+CUSTOMER_I CUST_NAME  CITY            GRADE SALESMAN_I
+---------- ---------- ---------- ---------- ----------
+98711      Aashritha  Bangalore         100 12355
+98712      Anvitha    Bangalore          90 12355
+98713      Thanvitha  Bangalore         100 12366
+98714      Shanvitha  Mysore            110 12388
+98715      Samyuktha  Mysore             80 12388
+
+SQL> select * from orders;
+
+ORDER_NO   PURCHASE_AMT ORD_DATE  CUSTOMER_I SALESMAN_I
+---------- ------------ --------- ---------- ----------
+10001              1000 20-NOV-21 98711      12355
+10002              1200 25-NOV-21 98712      12355
+10003              2000 26-NOV-21 98711      12366
+10004              1000 30-NOV-21 98714      12388
+10005              1000 30-NOV-21 98715      12388
+
+-------------------------------------------------------------------------------------------------
+QUERY 1:
+
+select Grade, Count(CUSTOMER_ID)
+from Customer
+Group by Grade
+Having Grade > (select Avg (Grade)
+				from CUSTOMER		
+				where city='Bangalore');
+				
+OUTPUT:
+
+     GRADE COUNT(CUSTOMER_ID)
+---------- ------------------
+       100                  2
+       110                  1
+
+QUERY 2:
+
+SELECT SALESMAN_ID,Name
+from salesman
+where SALESMAN_ID IN  (Select Salesman_id
+					   from customer
+					   group by Salesman_id
+					   having count(*)>1);
+					   
+OUTPUT:
+
+SALESMAN_I NAME
+---------- ----------
+12355      Ramesh
+12388      Rajesh
+
+QUERY 3:
+
+SELECT S.Salesman_id,S.Name,C.Cust_name,S.city
+from Salesman S , Customer C
+where S.Salesman_id=C.Salesman_id AND S.city=C.CITY
+UNION
+Select S.SALESMAN_ID,S.Name,C.CUST_NAME,'No Match'
+from Salesman S , Customer C
+where S.salesman_id=C.CUSTOMER_ID AND S.City<>C.City;
+
+OUTPUT:
+
+SALESMAN_I NAME       CUST_NAME  CITY
+---------- ---------- ---------- ----------
+12355      Ramesh     Aashritha  Bangalore
+12355      Ramesh     Anvitha    Bangalore
+12366      Suresh     Thanvitha  Bangalore
+12388      Rajesh     Samyuktha  Mysore
+12388      Rajesh     Shanvitha  Mysore
+
+QUERY 4:
+
+Create view HighestOrder as
+Select B.Ord_date,A.Salesman_id,A.Name
+from Salesman A , Orders B
+where A.Salesman_id = B.Salesman_id AND 
+B.Purchase_amt=(Select MAX(Purchase_amt)
+				from Orders C
+				where (C.Ord_date=B.Ord_date));
+				
+OUTPUT:
+
+View created.
+
+SQL>     Select * from Highestorder;
+
+ORD_DATE  SALESMAN_I NAME
+--------- ---------- ----------
+20-NOV-21 12355      Ramesh
+25-NOV-21 12355      Ramesh
+26-NOV-21 12366      Suresh
+30-NOV-21 12388      Rajesh
+30-NOV-21 12388      Rajesh
+
+QUERY 5:
+
+delete
+from Salesman
+where Salesman_id= '12377';
