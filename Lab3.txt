@@ -1,0 +1,153 @@
+CREATE TABLE ACTOR
+(
+	Act_id INT PRIMARY KEY,
+	Act_Name VARCHAR(20),
+	Act_Gender VARCHAR(20)
+);
+CREATE TABLE DIRECTOR
+(
+	Dir_id INT PRIMARY KEY,
+	Dir_Name VARCHAR(20),
+	Dir_Phone INT
+);
+CREATE TABLE MOVIES
+(
+	Mov_id INT PRIMARY KEY,
+	Mov_Title VARCHAR(20),
+	Mov_Year VARCHAR(20),
+	Mov_Lang VARCHAR(20),
+	Dir_id INT,
+                Foreign Key(Dir_id) References DIRECTOR(Dir_id) ON DELETE SET NULL
+);
+CREATE TABLE MOVIE_CAST
+(
+	Act_id INT,
+	Foreign Key(Act_id) References ACTOR(Act_id) ON DELETE SET NULL,
+	Mov_id INT,
+	Foreign Key(Mov_id) References MOVIES(Mov_id) ON DELETE SET NULL,
+	Role VARCHAR(20)
+);
+CREATE TABLE RATING
+(
+	Mov_id INT,
+	Foreign Key(Mov_id) References MOVIES(Mov_id) ON DELETE SET NULL,
+	Rev_Stars INT
+);	
+
+INSERT INTO ACTOR VALUES(301,'Pramod','Male');
+INSERT INTO ACTOR VALUES(302,'Prakash','Male');
+INSERT INTO ACTOR VALUES(303,'Prajwal','Male');
+INSERT INTO ACTOR VALUES(304,'Praneeth','Male');
+INSERT INTO ACTOR VALUES(305,'Prasanna','Female');
+
+INSERT INTO DIRECTOR VALUES(60,'Sananth', 8751611001);
+INSERT INTO DIRECTOR VALUES(61,'Hitchcock', 7766138911);
+INSERT INTO DIRECTOR VALUES(62,'Faran',  9986776531);
+INSERT INTO DIRECTOR VALUES(63,'Steven Spielberg', 8989776530);
+INSERT INTO DIRECTOR VALUES(64,'Rajath', 9051614504);
+
+INSERT INTO MOVIES VALUES (500,'AKASH', 2008, 'KANNADA', 60); 
+INSERT INTO MOVIES VALUES (501,'WAR HORSE', 2011,'ENGLISH', 61);
+INSERT INTO MOVIES VALUES (502,'Chamak', 2006, 'KANNADA', 62); 
+INSERT INTO MOVIES VALUES (503,'Welcome', 2010, 'Hindi', 63);
+INSERT INTO MOVIES VALUES (504,'Home Alone', 2002,'English', 64); 
+
+INSERT INTO MOVIE_CAST VALUES (301, 502, 'HERO'); 
+INSERT INTO MOVIE_CAST VALUES (302, 501, 'HERO');
+INSERT INTO MOVIE_CAST VALUES (303, 503, 'VILLIAN');
+INSERT INTO MOVIE_CAST VALUES (304, 502, 'GUEST');
+INSERT INTO MOVIE_CAST VALUES (305, 504, 'HEROINE');
+
+INSERT INTO RATING VALUES (500,5);
+INSERT INTO RATING VALUES (501,4);
+INSERT INTO RATING VALUES (503,4);
+INSERT INTO RATING VALUES (502,5);
+INSERT INTO RATING VALUES (504,4);
+
+=================================================
+Query 1:
+
+SELECT  Mov_Title
+FROM MOVIES
+WHERE Dir_id IN (SELECT Dir_id
+	              FROM DIRECTOR
+	              WHERE Dir_Name='Hitchcock'
+	            );
+
+Output 1:
+MOV_TITLE
+--------------------
+WAR HORSE
+=================================================
+
+INSERT INTO MOVIE_CAST VALUES(301,502,'HERO');
+INSERT INTO MOVIE_CAST VALUES(303,500,'GUEST');
+=================================================
+Query 2:
+SELECT Mov_Title
+FROM MOVIES M, MOVIE_CAST MV
+WHERE M.Mov_id=MV.Mov_id AND Act_id IN (SELECT Act_id
+					FROM MOVIE_CAST GROUP BY Act_id HAVING
+					COUNT (Act_id)>1
+					)
+GROUP BY Mov_Title HAVING
+COUNT (*)>1;
+
+Output 2:
+MOV_TITLE
+--------------------
+Chamak
+=================================================
+=================================================
+Query 3:
+SELECT ACT_NAME, MOV_TITLE, MOV_YEAR
+FROM ACTOR A JOIN
+MOVIE_CAST C
+ON A.ACT_ID=C.ACT_ID
+JOIN MOVIES M
+ON C.MOV_ID=M.MOV_ID
+WHERE M.MOV_YEAR NOT BETWEEN 2000 AND 2015; OR
+SELECT A.ACT_NAME, C.MOV_TITLE, C.MOV_YEAR FROM ACTOR
+A, MOVIE_CAST B, MOVIES C
+WHERE A.ACT_ID=B.ACT_ID
+AND B.MOV_ID=C.MOV_ID
+AND C.MOV_YEAR NOT BETWEEN 2000 AND 2015;
+================================================
+================================================
+Query 4:
+SELECT MOV_TITLE, MAX (REV_STARS)
+FROM MOVIES
+INNER JOIN RATING USING (MOV_ID) GROUP
+BY MOV_TITLE
+HAVING MAX (REV_STARS)>0
+ORDER BY MOV_TITLE;
+
+Output 4:
+MOV_TITLE            MAX(REV_STARS)
+-------------------- --------------
+AKASH                              5
+Chamak                            5
+Home Alone                     4
+WAR HORSE                     4
+Welcome                          4
+
+=================================================
+=================================================
+Query 5:
+UPDATE RATING
+SET Rev_Stars=5
+WHERE Mov_Id IN(SELECT Mov_Id 
+	              FROM Movies WHERE Dir_Id IN(
+			SELECT Dir_Id
+			 From Director
+			 Where Dir_Name='Steven Spielberg'));
+
+Output 5: 1 row updated.
+==================================================
+
+
+drop table ACTOR;
+drop table DIRECTOR;
+drop table MOVIES;
+drop table MOVIE_CAST;
+drop table RATING;
