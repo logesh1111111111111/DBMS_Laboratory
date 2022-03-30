@@ -1,0 +1,146 @@
+create table publisher
+(
+	name varchar(30) primary key,
+	address varchar(30),
+	phone int
+);
+create table book
+(
+	book_id int primary key,
+	title varchar(30),
+	publisher_name varchar(30),
+	pub_year int,
+	foreign key(publisher_name) references publisher(name) on delete cascade
+);
+create table author
+(
+	book_id int,
+	author_name varchar(30),
+	primary key(book_id,author_name),
+	foreign key(book_id) references book(book_id) on delete cascade
+);
+create table branch
+(
+	branch_id int,
+	branch_name char(20),
+	address char(50),
+	primary key(branch_id)
+);
+create table card
+(
+	card_no int primary key	
+);
+create table book_copies
+(
+	book_id int,
+	branch_id int,
+	no_of_copies int,
+	foreign key(book_id) references book(book_id) on delete cascade,
+	primary key(book_id,branch_id)
+);
+create table book_lending
+(
+	due_date date,
+	due_out date,
+	book_id int,
+	branch_id int,
+	card_no int,
+	foreign key(book_id) references book(book_id) on delete cascade ,
+	foreign key(branch_id) references branch(branch_id) on delete cascade ,
+	foreign key(card_no) references card(card_no) on delete cascade,
+	primary key(book_id,branch_id,card_no)
+);
+
+
+insert into branch values(01,'abc','bengaluru');
+insert into branch values(02,'def','mysore');
+insert into branch values(03,'ghi','delhi');
+insert into branch values(04,'jkl','bengaluru');
+insert into branch values(05,'mno','pune');
+
+select * from branch;
+
+
+insert into card values(10);
+insert into card values(11);
+insert into card values(12);
+insert into card values(13);
+insert into card values(14);
+
+select * from card;
+
+
+insert into publisher values('penguin','bengaluru',988060);
+insert into publisher values('oxford','bengaluru',974042);
+insert into publisher values('RK','mangalore',991622);
+insert into publisher values('prince','mysore',973123);
+insert into publisher values('arihant','pune',98765);
+
+select * from publisher;
+
+
+insert into book values(123,'physics','penguin',2000);
+insert into book values(124,'chemistry','oxford',2001);
+insert into book values(125,'maths','RK',2002);
+insert into book values(126,'biology','prince',2000);
+insert into book values(127,'english','arihant',2004);
+
+select * from book;
+
+
+insert into author values(123,'PK');
+insert into author values(124,'NK'); 
+insert into author values(125,'CKR');
+insert into author values(126,'MKV');
+insert into author values(127,'SRS');
+
+select * from author;
+
+
+insert into book_copies values(123,01,5);
+insert into book_copies values(124,02,6);
+insert into book_copies values(125,03,5);
+insert into book_copies values(126,04,2);
+insert into book_copies values(127,05,3);
+
+select * from book_copies;
+
+insert into book_lending values('23-jan-2017','02-feb-2017',123,01,10);
+insert into book_lending values('06-feb-2017','16-feb-2017',124,02,11);
+insert into book_lending values('10-oct-2018','20-oct-2018',125,03,12);
+insert into book_lending values('04-may-2019','14-may-2019',126,04,13);
+insert into book_lending values('05-jan-2017','15-jan-2017',127,05,14);
+
+select * from book_lending;
+
+
+Query 1:
+select B.book_id,title,publisher_name,author_name,no_of_copies
+from book B,author A,book_copies C
+where B.book_id = A.book_id and B.book_id = C.book_id;
+
+Query 2:
+select card_no
+from book_lending
+where due_out between '01-jan-2017' and '28-feb-2019'
+group by card_no
+having count(*) >=1;
+
+Query 3:
+delete from book where book_id=123;
+select * from book;
+
+Query 4:
+create view v_publication_year as
+select pub_year
+from book;
+
+select * from v_publication_year;
+
+Query 5:
+create view v_books as
+select B.book_id,B.title,C.no_of_copies
+from book B,book_copies C
+where B.book_id = C.book_id;
+
+select * from v_books;
